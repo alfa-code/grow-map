@@ -30,9 +30,12 @@
                             ]
                         }
                     ]
+                }, {
+                    name: 'Test'
                 }
         ];
         const growMap = new GM.GrowMap(container, things);
+        window.growMap = growMap;
         growMap.init();
         // const container = document.getElementById('container');
         // const options = {

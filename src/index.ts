@@ -38,6 +38,11 @@ type PreparedThing = {
     position: {
         x: number,
         y: number,
+    },
+    size: {
+        width: number;
+        height: number;
+        fontSize: number;
     }
 }
 
@@ -56,6 +61,7 @@ export class GrowMap {
 
     constructor(container: Element, things: Things) {
         this.container = container;
+        this.ctx = null;
         this.params = {
             bgColor: 'skyblue',
             fontSize: 40,
@@ -66,47 +72,58 @@ export class GrowMap {
         this.preparedThings = null;
     }
 
-    prepareThings = () => {
-        const { things } = this;
-
-        function prepareThing(thing: Thing, i: number) {
-            const preparedThing: PreparedThing = {
-                name: thing.name,
-                position: {
-                    x: 0,
-                    y: 0,
-                }
+    private prepareThing = (thing: Thing, i: number) => {
+        const preparedThing: PreparedThing = {
+            name: thing.name,
+            position: {
+                x: 0,
+                y: 0,
+            },
+            size: {
+                width: null,
+                height: null,
+                fontSize: null,
             }
-
-            // Вычисляем ширину и высоту
-
-
-            // Нужно вычислить положение блока - но вычислить его можно токло после того как у предыдущего элемента есть ширина и высота
-            // Что бы вычислить ширину и высоту нужно посчитать
-            if (i !== 0) {
-                preparedThing.position.x = 0;
-                preparedThing.position.y = 0;
-            }
-
-            if (thing.children) {
-                preparedThing.children = thing.children.map(prepareThing);
-            }
-            
-            return preparedThing;
         }
 
-        this.preparedThings = things.map(prepareThing);
+        // Вычисляем ширину и высоту
+        const thingSize = this.getThingSize(thing);
+
+        preparedThing.size = {
+            width: thingSize.width,
+            height: thingSize.height,
+            fontSize: thingSize.fontSize,
+        }
+
+        // Нужно вычислить положение блока - но вычислить его можно токло после того как у предыдущего элемента есть ширина и высота
+        // Что бы вычислить ширину и высоту нужно посчитать
+        if (i !== 0) {
+            preparedThing.position.x = 0;
+            preparedThing.position.y = 0;
+        }
+
+        if (thing.children) {
+            preparedThing.children = thing.children.map(this.prepareThing);
+        }
+        
+        return preparedThing;
+    }
+
+    private prepareThings = () => {
+        const { things } = this;
+
+        this.preparedThings = things.map(this.prepareThing);
 
         console.log('Things are prepared.');
     }
 
     init = () => {
-        this.prepareThings();
-
         console.log('App initialization is started.');
 
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
+
+        this.prepareThings();
 
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
@@ -115,7 +132,6 @@ export class GrowMap {
         this.canvas.height = h;
         this.container.appendChild(this.canvas);
 
-        // this.ctx.translate(10, 10);
         this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
 
         const observedContainerData: any = {
@@ -145,17 +161,17 @@ export class GrowMap {
 
         window.requestAnimationFrame(() => {
             this.drawBG();
-            this.drawRectangle({name: '32523523523523523 \n\n 5235235235235235'});
+            // this.drawRectangle({name: '32523523523523523 \n\n 5235235235235235'});
         });
     }
 
-    reload = () => {
+    private reload = () => {
         console.log('App reload is started.');
         this.container.innerHTML = '';
         this.init();
     }
 
-    getThingSize = (thing: Thing) => {
+    private getThingSize = (thing: Thing) => {
         const fontSize = 16;
         const textMetrics = this.getTextSize(thing.name, fontSize);
 
@@ -166,28 +182,28 @@ export class GrowMap {
 
         return {
             fontSize: fontSize,
-            width: 100,
-            height: 100,
+            width: rectW,
+            height: rectH,
         }
     }
 
-    drawRectangle = (thing: any) => {
-        this.params.fontSize = 20;
-        const textMetrics = this.getTextSize(thing.name, 60);
-        console.log('textMetrics:', textMetrics);
+    // private drawRectangle = (thing: any) => {
+    //     this.params.fontSize = 20;
+    //     const textMetrics = this.getTextSize.call(this, thing.name, 60);
+    //     console.log('textMetrics:', textMetrics);
 
-        this.ctx.fillStyle = this.params.rectColor;
+    //     this.ctx.fillStyle = this.params.rectColor;
 
-        const p = this.params.fontSize / 4;
+    //     const p = this.params.fontSize / 4;
 
-        const rectW = (textMetrics.width + p);
-        const rectH = (this.params.fontSize + p);
+    //     const rectW = (textMetrics.width + p);
+    //     const rectH = (this.params.fontSize + p);
 
-        this.ctx.fillRect(0, 0, rectW, rectH);
-        this.drawText(thing.name, 10, (10 + this.params.fontSize));
-    }
+    //     this.ctx.fillRect(0, 0, rectW, rectH);
+    //     this.drawText(thing.name, 10, (10 + this.params.fontSize));
+    // }
 
-    getTextSize = (text: string, fontSize: number): TextMetrics => {
+    private getTextSize = (text: string, fontSize: number): TextMetrics => {
         const previousFont = this.ctx.font;
         this.ctx.font = `${fontSize}px serif`;
         const measuredText = this.ctx.measureText(text);
@@ -195,13 +211,13 @@ export class GrowMap {
         return measuredText;
     }
 
-    drawText = (text: string, x: number, y: number) => {
+    private drawText = (text: string, x: number, y: number) => {
         this.ctx.font = `${this.params.fontSize}px serif`;
         this.ctx.fillStyle = this.params.fontColor;
         this.ctx.fillText(text, x, y);
     }
 
-    drawBG = () => {
+    private drawBG = () => {
         this.ctx.fillStyle = this.params.bgColor;
         this.ctx.fillRect(-(this.canvas.width / 2), -(this.canvas.height / 2), this.canvas.width, this.canvas.height);
     }
