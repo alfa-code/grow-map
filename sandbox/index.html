@@ -7,18 +7,16 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="container"></div>
+    <div id="container" style="width: 100%; height: 600px;"></div>
     <script src="bundle.js"></script>
     <script>
         const container = document.getElementById('container');
-        const options = {
-            container: container,
-            data: [
+        const things = [
                 {
                     name: 'main',
                     children: [
                         {
-                            name: 'john'
+                            name: 'john',
                         },
                         {
                             name: 'ivan',
@@ -33,12 +31,39 @@
                         }
                     ]
                 }
-            ]
-        }
-        const growMap = new GM.GrowMap(options);
-        growMap.start();
+        ];
+        const growMap = new GM.GrowMap(container, things);
         growMap.init();
+        // const container = document.getElementById('container');
+        // const options = {
+        //     container: container,
+        //     data: [
+        //         {
+        //             name: 'main',
+        //             children: [
+        //                 {
+        //                     name: 'john'
+        //                 },
+        //                 {
+        //                     name: 'ivan',
+        //                     children: [
+        //                         {
+        //                             name: 'alex'
+        //                         },
+        //                         {
+        //                             name: 'dan'
+        //                         }
+        //                     ]
+        //                 }
+        //             ]
+        //         }
+        //     ]
+        // }
+        // const growMap = new GM.GrowMap(options);
+        // growMap.start();
+        // growMap.init();
         // growMap.showThings();
+        
     </script>
 </body>
 </html>
