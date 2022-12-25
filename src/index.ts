@@ -69,13 +69,13 @@ export class GrowMap {
             fontSize: 160,
             fontColor: 'red',
             rectColor: 'white',
-            globPadding: 20,
+            globPadding: 40,
         }
         this.things = things;
         this.preparedThings = null;
     }
 
-    private prepareThing = (thing: Thing, i: number) => {
+    private prepareThing = (thing: Thing, i: number, things: Things) => {
         const preparedThing: PreparedThing = {
             name: thing.name,
             position: {
@@ -100,23 +100,20 @@ export class GrowMap {
             padding: thingSize.padding,
         }
 
-        if (i ! === 0) {
-            // preparedThing.position.x = things[0].position.x + things[0].size.width + this.params.globPadding;
-        }
-
-        // Нужно вычислить положение блока - но вычислить его можно токло после того как у предыдущего элемента есть ширина и высота
-        // Что бы вычислить ширину и высоту нужно посчитать
         if (i !== 0) {
-            preparedThing.position.x = 0;
-            preparedThing.position.y = 0;
+            const previousThingSize = this.getThingSize(things[i - 1]);
+            // console.log('things[i - 1]:', things[i - 1]);
+            // console.log('i:', i);
+            // console.log('things:', things);
+            console.log('previousThingSize222222:', previousThingSize);
+            preparedThing.position.x = previousThingSize.width + this.params.globPadding;
         }
 
         if (thing.children) {
-            preparedThing.children = thing.children.map((thing, i) => {
-                return this.prepareThing(thing, i)
-            });
+            preparedThing.children = thing.children.map(this.prepareThing);
         }
         
+        console.log('preparedThing:', preparedThing);
         return preparedThing;
     }
 
@@ -172,7 +169,10 @@ export class GrowMap {
 
         window.requestAnimationFrame(() => {
             this.drawBG();
-            this.drawRectangle(this.preparedThings[0]);
+
+            this.preparedThings.forEach((preparedThing) => {
+                this.drawRectangle(preparedThing);
+            });
         });
     }
 
