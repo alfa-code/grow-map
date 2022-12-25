@@ -43,6 +43,7 @@ type PreparedThing = {
         width: number;
         height: number;
         fontSize: number;
+        padding: number;
     }
 }
 
@@ -55,18 +56,20 @@ export class GrowMap {
         fontSize: number;
         fontColor: string;
         rectColor: string;
+        globPadding: number;
     };
     things: Things;
-    preparedThings: Things;
+    preparedThings: Array<PreparedThing>;
 
     constructor(container: Element, things: Things) {
         this.container = container;
         this.ctx = null;
         this.params = {
             bgColor: 'skyblue',
-            fontSize: 40,
+            fontSize: 160,
             fontColor: 'red',
             rectColor: 'white',
+            globPadding: 20,
         }
         this.things = things;
         this.preparedThings = null;
@@ -83,6 +86,7 @@ export class GrowMap {
                 width: null,
                 height: null,
                 fontSize: null,
+                padding: null,
             }
         }
 
@@ -93,6 +97,11 @@ export class GrowMap {
             width: thingSize.width,
             height: thingSize.height,
             fontSize: thingSize.fontSize,
+            padding: thingSize.padding,
+        }
+
+        if (i ! === 0) {
+            // preparedThing.position.x = things[0].position.x + things[0].size.width + this.params.globPadding;
         }
 
         // Нужно вычислить положение блока - но вычислить его можно токло после того как у предыдущего элемента есть ширина и высота
@@ -103,7 +112,9 @@ export class GrowMap {
         }
 
         if (thing.children) {
-            preparedThing.children = thing.children.map(this.prepareThing);
+            preparedThing.children = thing.children.map((thing, i) => {
+                return this.prepareThing(thing, i)
+            });
         }
         
         return preparedThing;
@@ -161,7 +172,7 @@ export class GrowMap {
 
         window.requestAnimationFrame(() => {
             this.drawBG();
-            // this.drawRectangle({name: '32523523523523523 \n\n 5235235235235235'});
+            this.drawRectangle(this.preparedThings[0]);
         });
     }
 
@@ -172,7 +183,7 @@ export class GrowMap {
     }
 
     private getThingSize = (thing: Thing) => {
-        const fontSize = 16;
+        const fontSize = this.params.fontSize;
         const textMetrics = this.getTextSize(thing.name, fontSize);
 
         const p = fontSize / 4;
@@ -184,24 +195,19 @@ export class GrowMap {
             fontSize: fontSize,
             width: rectW,
             height: rectH,
+            padding: p,
         }
     }
 
-    // private drawRectangle = (thing: any) => {
-    //     this.params.fontSize = 20;
-    //     const textMetrics = this.getTextSize.call(this, thing.name, 60);
-    //     console.log('textMetrics:', textMetrics);
-
-    //     this.ctx.fillStyle = this.params.rectColor;
-
-    //     const p = this.params.fontSize / 4;
-
-    //     const rectW = (textMetrics.width + p);
-    //     const rectH = (this.params.fontSize + p);
-
-    //     this.ctx.fillRect(0, 0, rectW, rectH);
-    //     this.drawText(thing.name, 10, (10 + this.params.fontSize));
-    // }
+    private drawRectangle = (thing: PreparedThing) => {
+        this.ctx.fillStyle = this.params.rectColor;
+        this.ctx.fillRect(thing.position.x, thing.position.y, thing.size.width, thing.size.height);
+        this.drawText(
+            thing.name,
+            thing.position.x + thing.size.padding,
+            thing.position.y + (thing.size.padding / 2) + thing.size.fontSize,
+        );
+    }
 
     private getTextSize = (text: string, fontSize: number): TextMetrics => {
         const previousFont = this.ctx.font;
