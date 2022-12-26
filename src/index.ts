@@ -59,6 +59,7 @@ export class GrowMap {
         fontColor: string;
         rectColor: string;
         globPadding: number;
+        zoom: number;
     };
     things: Things;
     preparedThings: Array<PreparedThing>;
@@ -71,8 +72,14 @@ export class GrowMap {
             fontSize: 26,
             fontColor: 'red',
             rectColor: 'white',
+            zoom: 5,
             globPadding: 20,
         }
+        Object.defineProperty(this.params, 'globPadding', {
+            // value: 42,
+            // writable: true,
+            get() { return this.zoom * 20 },
+        });
         this.things = things;
         this.preparedThings = null;
     }
@@ -133,12 +140,6 @@ export class GrowMap {
         const getChildrenWidth = (children: PreparedThing[]) => {
             let commonWidth: number = 0;
             children.forEach((element, index) => {
-                // if (index === 0) {
-                //     commonWidth = commonWidth + this.params.globPadding + ((element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width);
-                // } else {
-                //     commonWidth = commonWidth + element.size.width + this.params.globPadding;
-                // }
-
                 if (index === 0) {
                     // const biggestElem =  (element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width;
                     const smallestElem =  (element.parent.size.width <= element.size.width) ? element.parent.size.width : element.size.width;
@@ -159,7 +160,6 @@ export class GrowMap {
         }
 
         if (i !== 0) {
-            // const allChildrenWidth = getChildrenWidth(preparedThings[i - 1].children);
             let allChildrenWidth: number = 0;
             const previousThings = preparedThings.slice(0, i);
             previousThings.forEach((thing) => {
@@ -169,8 +169,6 @@ export class GrowMap {
                 
             });
 
-            console.log('preparedThing.name', preparedThing.name);
-            console.log('allChildrenWidth:', allChildrenWidth);
             preparedThing.position.x = preparedThing.position.x + allChildrenWidth;
         }
 
@@ -304,13 +302,13 @@ export class GrowMap {
     }
 
     private getThingSize = (thing: Thing) => {
-        const fontSize = this.params.fontSize;
+        const fontSize = this.params.fontSize * this.params.zoom;
         const textMetrics = this.getTextSize(thing.name, fontSize);
 
-        const p = fontSize / 4;
+        const p = (fontSize / 4);
 
         const rectW = (p + textMetrics.width + p);
-        const rectH = (p + this.params.fontSize + p);
+        const rectH = (p + fontSize + p);
 
         return {
             fontSize: fontSize,
@@ -327,8 +325,8 @@ export class GrowMap {
             thing.name,
             thing.position.x + thing.size.padding,
             thing.position.y + (thing.size.padding / 2) + thing.size.fontSize,
+            thing.size.fontSize,
         );
-        
     }
 
     private getTextSize = (text: string, fontSize: number): TextMetrics => {
@@ -339,8 +337,8 @@ export class GrowMap {
         return measuredText;
     }
 
-    private drawText = (text: string, x: number, y: number) => {
-        this.ctx.font = `${this.params.fontSize}px serif`;
+    private drawText = (text: string, x: number, y: number, fontSize: number) => {
+        this.ctx.font = `${fontSize}px serif`;
         this.ctx.fillStyle = this.params.fontColor;
         this.ctx.fillText(text, x, y);
     }
