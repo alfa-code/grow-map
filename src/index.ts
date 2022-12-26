@@ -31,15 +31,17 @@ type Thing = {
 
 type Things = Array<Thing>;
 
+type PreparedThings = PreparedThing[];
+
 type PreparedThing = {
-    name: string;
+    name?: string;
     children?: Array<PreparedThing>
     parent?: PreparedThing;
-    position: {
+    position?: {
         x: number,
         y: number,
     },
-    size: {
+    size?: {
         width: number;
         height: number;
         fontSize: number;
@@ -66,16 +68,16 @@ export class GrowMap {
         this.ctx = null;
         this.params = {
             bgColor: 'skyblue',
-            fontSize: 160,
+            fontSize: 26,
             fontColor: 'red',
             rectColor: 'white',
-            globPadding: 40,
+            globPadding: 20,
         }
         this.things = things;
         this.preparedThings = null;
     }
 
-    private prepareThing = (thing: Thing, i: number, things: Things) => {
+    private prepareThing = (thing: Thing, i: number, things: Things, preparedParent?: PreparedThing) => {
         const preparedThing: PreparedThing = {
             name: thing.name,
             position: {
@@ -90,6 +92,10 @@ export class GrowMap {
             }
         }
 
+        if (preparedParent) {
+            preparedThing.parent = preparedParent;
+        }
+
         // Вычисляем ширину и высоту
         const thingSize = this.getThingSize(thing);
 
@@ -102,18 +108,33 @@ export class GrowMap {
 
         if (i !== 0) {
             const previousThingSize = this.getThingSize(things[i - 1]);
-            // console.log('things[i - 1]:', things[i - 1]);
-            // console.log('i:', i);
-            // console.log('things:', things);
-            console.log('previousThingSize222222:', previousThingSize);
             preparedThing.position.x = previousThingSize.width + this.params.globPadding;
+
+            if (preparedParent) {
+                preparedThing.position.x = (preparedParent.position.x + preparedParent.size.width) + previousThingSize.width + this.params.globPadding;
+            }
+        } else {
+            if (preparedParent) {
+                preparedThing.position.x = preparedParent.position.x;
+            }
+
+            // if (preparedParent) {
+            //     preparedThing.position.x = (preparedParent.position.x + preparedParent.size.width) + this.params.globPadding;
+            // }
+        }
+
+        if (preparedParent) {
+            preparedThing.position.y = preparedParent.position.y + preparedParent.size.height + this.params.globPadding;
+        } else {
+            preparedThing.position.y = 0
         }
 
         if (thing.children) {
-            preparedThing.children = thing.children.map(this.prepareThing);
+            preparedThing.children = thing.children.map((...props) => {
+                return this.prepareThing(...props, preparedThing);
+            });
         }
         
-        console.log('preparedThing:', preparedThing);
         return preparedThing;
     }
 
@@ -125,13 +146,132 @@ export class GrowMap {
         console.log('Things are prepared.');
     }
 
+    /**
+     * Подготавливаем положение элементов
+     */
+    private preparePositions = () => {
+        this.preparedThings = this.preparedThings.map(this.preparePosition);
+        console.log('Things sizes are prepared.');
+    }
+
+    private preparePosition = (preparedThing: PreparedThing, i: number, preparedThings: PreparedThings) => {
+        const { parent } = preparedThing;
+        const { globPadding } = this.params;
+
+        if (!parent) {
+            if (i === 0) {
+                preparedThing.position.x = 0;
+                preparedThing.position.y = 0;
+            } else {
+                const slicedPreparedThings = preparedThings.slice(0, i);
+                const previousGap = slicedPreparedThings.reduce((previousValue, currentValue) => {
+                    return previousValue + currentValue.size.width + globPadding;
+                }, 0)
+                preparedThing.position.x = previousGap;
+                preparedThing.position.y = 0;
+            }
+        }
+
+        if (parent) {
+            let isParentExists = true;
+            let highParent = parent;
+            let yPosition = 0;
+            while (isParentExists) {
+                yPosition = yPosition + highParent.size.height + globPadding;
+
+                if (highParent.parent) {
+                    highParent = highParent.parent;
+                } else {
+                    isParentExists = false;
+                }
+            }
+            preparedThing.position.y = yPosition;
+    
+            if (i === 0) {
+                preparedThing.position.x = parent.position.x;
+            } else {
+                const slicedPreparedThings = preparedThings.slice(0, i);
+                let previousGap = slicedPreparedThings.reduce((previousValue, currentValue) => {
+                    return previousValue + currentValue.size.width + this.params.globPadding;
+                }, 0)
+                previousGap = previousGap + parent.position.x;
+                preparedThing.position.x = previousGap;
+            }
+        }
+
+        if (preparedThing.children) {
+            preparedThing.children = preparedThing.children.map((...props) => {
+                return this.preparePosition(...props);
+            });
+        }
+        
+        return preparedThing; 
+    }
+    /**
+     * ----------------------
+     */
+
+
+    /**
+     * Вычисляем размеры элементов
+     */
+    private prepareThingsSizes = () => {
+        this.preparedThings = this.things.map(this.prepareThingSize);
+        console.log('Things sizes are prepared.');
+    }
+
+    private prepareThingSize = (thing: Thing, i: number, things: Things, parentPreparedThing?: PreparedThing) => {
+        const preparedThing: PreparedThing = {
+            size: {
+                width: null,
+                height: null,
+                fontSize: null,
+                padding: null,
+            },
+            name: null,
+            position: {
+                x: null,
+                y: null,
+            }
+        }
+
+        preparedThing.name = thing.name;
+
+        if (parentPreparedThing) {
+            preparedThing.parent = parentPreparedThing;
+        }
+
+        // Вычисляем ширину и высоту текстового элемента
+        const thingSize = this.getThingSize(thing);
+
+        preparedThing.size = {
+            width: thingSize.width,
+            height: thingSize.height,
+            fontSize: thingSize.fontSize,
+            padding: thingSize.padding,
+        }
+
+        if (thing.children) {
+            preparedThing.children = thing.children.map((...props) => {
+                return this.prepareThingSize(...props, preparedThing);
+            });
+        }
+        
+        return preparedThing;
+    }
+    /**
+     * ----------------------
+     */
+
     init = () => {
         console.log('App initialization is started.');
 
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
 
-        this.prepareThings();
+        this.prepareThingsSizes();
+        this.preparePositions();
+        // this.prepareThings();
 
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
@@ -170,9 +310,17 @@ export class GrowMap {
         window.requestAnimationFrame(() => {
             this.drawBG();
 
-            this.preparedThings.forEach((preparedThing) => {
-                this.drawRectangle(preparedThing);
-            });
+            this.drawThings(this.preparedThings);
+        });
+    }
+
+    drawThings = (preparedThings: PreparedThing[]) => {
+        preparedThings.forEach((preparedThing) => {
+            this.drawRectangle(preparedThing);
+
+            if (preparedThing.children) {
+                this.drawThings(preparedThing.children);
+            }
         });
     }
 
@@ -207,6 +355,7 @@ export class GrowMap {
             thing.position.x + thing.size.padding,
             thing.position.y + (thing.size.padding / 2) + thing.size.fontSize,
         );
+        
     }
 
     private getTextSize = (text: string, fontSize: number): TextMetrics => {

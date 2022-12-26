@@ -13,27 +13,44 @@
         const container = document.getElementById('container');
         const things = [
                 {
-                    name: 'main',
+                    name: '1.1',
+                    children: [
+                        {
+                            name: '2.1',
+                        },
+                        {
+                            name: '2.2',
+                            children: [
+                                {
+                                    name: '3.1'
+                                },
+                                {
+                                    name: '3.2'
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: '1.2',
                     // children: [
                     //     {
-                    //         name: 'john',
+                    //         name: '2.1 (2)',
                     //     },
                     //     {
-                    //         name: 'ivan',
-                    //         children: [
-                    //             {
-                    //                 name: 'alex'
-                    //             },
-                    //             {
-                    //                 name: 'dan'
-                    //             }
-                    //         ]
+                    //         name: '2.2 (2)',
+                    //     },
+                    //     {
+                    //         name: '2.3 (2)',
                     //     }
                     // ]
                 },
                 {
-                    name: 'Test'
-                }
+                    name: '1.3'
+                },
+                {
+                    name: '1.4'
+                },
         ];
         const growMap = new GM.GrowMap(container, things);
         window.growMap = growMap;
