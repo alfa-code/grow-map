@@ -6,23 +6,24 @@
  * + 2) При инициализации карты в контейнер добавляется канвас
  * + 3) Канвас должен растянуться по размеру контейнера
  * + 4) Канвас должен следить за размером контейнера и если он меняется - перезагружать приложение
- * 5) Канвас должен принимать на вход объект или массив обхектов и рисовать графику
- * 6) Камера должна центроваться по главному обьекту или набору главных объектов
- * 7) В программе должен быть реализован зум
- * 8) Программа может быть запущена зазаумленой к основным обектам или охватывая общий размер
+ * + 5) Канвас должен принимать на вход объект или массив обхектов и рисовать графику
+ * + 6) Камера должна центроваться по главному обьекту или набору главных объектов
+ * + 7) В программе должен быть реализован зум
+ * + 8) Программа может быть запущена зазаумленой к основным обектам или охватывая общий размер
  * 9) минимальный зум определяется размером основного блока - максимальный зум охватом всех блоков плюс отступы
  * 10) Различные настройки можно выводить на экран чтобы настраивать их ползунками
- * 11) Каждый родительский объект может иметь дочерний
+ * + 11) Каждый родительский объект может иметь дочерний
  * 12) Если в дочернем не указано в какую сторону он смещается - то он смещается в случайную сторону
- * 13) Дочерние элементы имеют отступ от родительскоко и так же имеет отступ от своих кузенов
- * 14) Есть возможность мышкой двигать камеру
- * 15) У приложения есть некоторое состояние - состояние хранит инициализированные обекты и их состояние (расположение и так далеее)
- * 16) По элементу можно кликнуть и получить активаированный элемент - элемент может быть подсвечен
- * 17) Если происходит клик по другому элементу - предыдущий перестает быть активным
- * 18) Если клик не был кликнут не по одному элементу то никакого активного элемента нет
+ * + 13) Дочерние элементы имеют отступ от родительскоко и так же имеет отступ от своих кузенов
+ * + 14) Есть возможность мышкой двигать камеру
+ * + 15) У приложения есть некоторое состояние - состояние хранит инициализированные обекты и их состояние (расположение и так далеее)
+ * + 16) По элементу можно кликнуть и получить активаированный элемент - элемент может быть подсвечен
+ * + 17) Если происходит клик по другому элементу - предыдущий перестает быть активным
+ * + 18) Если клик не был кликнут не по одному элементу то никакого активного элемента нет
  * 19) У элементов есть z-index - z index влияет на отрисовку элементов
  * 20) Все кузены имеют один и тот же индекс - все дочерние на единицу больше то есть ниже
- * 21) В каждом элементе/блоке можно написать текст - текст меняет размер блока элемента - все остальные элементы подстравиваются под новый размер блока
+ * ? 21) В каждом элементе/блоке можно написать текст - текст меняет размер блока элемента - все остальные элементы подстравиваются под новый размер блока
+ * 22) Родительский блок центруется по центру относительно всех дочерних элементов
  */
 type Thing = {
     name: string;
@@ -54,6 +55,7 @@ export class GrowMap {
     ctx: CanvasRenderingContext2D;
     canvas: HTMLCanvasElement;
     params: {
+        centering: boolean;
         bgColor: string;
         fontSize: number;
         fontColor: string;
@@ -89,6 +91,7 @@ export class GrowMap {
         this.ctx = null;
         this.activeElement = null;
         this.params = {
+            centering: true,
             bgColor: 'skyblue',
             fontSize: 26,
             fontColor: 'black',
@@ -129,6 +132,28 @@ export class GrowMap {
      */
     private preparePositions = () => {
         this.preparedThings = this.preparedThings.map(this.preparePosition);
+    }
+
+    getChildrenWidth = (children: PreparedThing[]) => {
+        let commonWidth: number = 0;
+        children.forEach((element, index) => {
+            if (index === 0) {
+                // const biggestElem = (element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width;
+                const smallestElem = (element.parent.size.width <= element.size.width) ? element.parent.size.width : element.size.width;
+                commonWidth = commonWidth - smallestElem;
+            }
+
+            commonWidth = commonWidth + element.size.width + this.params.globPadding;
+
+            if (element.children) {
+                const anotherChildrenWidth = this.getChildrenWidth(element.children);
+                commonWidth = commonWidth + anotherChildrenWidth;
+            }
+        });
+
+        commonWidth = commonWidth - this.params.globPadding;
+
+        return commonWidth;
     }
 
     private preparePosition = (preparedThing: PreparedThing, i: number, preparedThings: PreparedThings) => {
@@ -176,39 +201,35 @@ export class GrowMap {
             }
         }
 
-        const getChildrenWidth = (children: PreparedThing[]) => {
-            let commonWidth: number = 0;
-            children.forEach((element, index) => {
-                if (index === 0) {
-                    // const biggestElem =  (element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width;
-                    const smallestElem =  (element.parent.size.width <= element.size.width) ? element.parent.size.width : element.size.width;
-                    commonWidth = commonWidth - smallestElem;
-                }
-
-                commonWidth = commonWidth + element.size.width + this.params.globPadding;
-
-                if (element.children) {
-                    const anotherChildrenWidth = getChildrenWidth(element.children);
-                    commonWidth = commonWidth + anotherChildrenWidth;
-                }
-            });
-
-            commonWidth = commonWidth - this.params.globPadding;
-
-            return commonWidth;
-        }
+        // console.log('childrenCenter:', childrenCenter);
+        // console.log('allChildrenWidth:', allChildrenWidth);
 
         if (i !== 0) {
             let allChildrenWidth: number = 0;
             const previousThings = preparedThings.slice(0, i);
             previousThings.forEach((thing) => {
                 if (thing.children) {
-                    allChildrenWidth = allChildrenWidth + getChildrenWidth(thing.children);
+                    allChildrenWidth = allChildrenWidth + this.getChildrenWidth(thing.children);
                 }
-                
             });
 
             preparedThing.position.x = preparedThing.position.x + allChildrenWidth;
+        }
+
+        if (this.params.centering) {
+            if (parent) {
+                const childrenWidth = this.getChildrenWidth(parent.children)
+                const halfWidth = childrenWidth / 2;
+    
+                preparedThing.position.x = preparedThing.position.x - halfWidth;
+            }
+    
+            if (preparedThing.children) {
+                const childrenWidth = this.getChildrenWidth(preparedThing.children)
+                const halfWidth = childrenWidth / 2;
+    
+                preparedThing.position.x = preparedThing.position.x + halfWidth;
+            }
         }
 
         if (preparedThing.children) {
@@ -216,7 +237,7 @@ export class GrowMap {
                 return this.preparePosition(...props);
             });
         }
-        
+
         return preparedThing; 
     }
     /**
@@ -273,32 +294,48 @@ export class GrowMap {
      * ----------------------
      */
 
-    findBorders = (preparedThing: PreparedThing) => {
-        if (preparedThing.position.x <= this.params.borders.left) {
-            this.params.borders.left = preparedThing.position.x;
+    findBorders = (preparedThing: PreparedThing, borders: any) => {
+        if (preparedThing.position.x <= borders.left) {
+            borders.left = preparedThing.position.x;
         }
 
-        if (preparedThing.position.y <= this.params.borders.top) {
-            this.params.borders.top = preparedThing.position.y;
+        if (preparedThing.position.y <= borders.top) {
+            borders.top = preparedThing.position.y;
         }
 
-        if ((preparedThing.position.x + preparedThing.size.width) >= this.params.borders.right) {
-            this.params.borders.right = (preparedThing.position.x + preparedThing.size.width);
+        if ((preparedThing.position.x + preparedThing.size.width) >= borders.right) {
+            borders.right = (preparedThing.position.x + preparedThing.size.width);
         }
 
-        if ((preparedThing.position.y + preparedThing.size.height) >= this.params.borders.bottom) {
-            this.params.borders.bottom = (preparedThing.position.y + preparedThing.size.height);
+        if ((preparedThing.position.y + preparedThing.size.height) >= borders.bottom) {
+            borders.bottom = (preparedThing.position.y + preparedThing.size.height);
         }
 
         if (preparedThing.children) {
-            preparedThing.children.every(this.findBorders);
+            preparedThing.children.every((preparedThing) => {
+                return this.findBorders(preparedThing, borders) 
+            });
         }
 
         return true;
     }
 
     setBorders = () => {
-        this.preparedThings.every(this.findBorders);
+        const borders = {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        }
+        
+        this.preparedThings.every((preparedThing) => {
+            this.findBorders(preparedThing, borders);
+        });
+
+        this.params.borders.left = borders.left;
+        this.params.borders.right = borders.right;
+        this.params.borders.top = borders.top;
+        this.params.borders.bottom = borders.bottom;
     }
 
     init = () => {
