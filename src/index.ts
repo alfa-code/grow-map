@@ -56,6 +56,7 @@ export class GrowMap {
     canvas: HTMLCanvasElement;
     params: {
         centering: boolean;
+        collapsed: boolean;
         bgColor: string;
         fontSize: number;
         fontColor: string;
@@ -92,6 +93,7 @@ export class GrowMap {
         this.activeElement = null;
         this.params = {
             centering: true,
+            collapsed: true,
             bgColor: 'skyblue',
             fontSize: 26,
             fontColor: 'black',
@@ -250,6 +252,28 @@ export class GrowMap {
     private prepareThingsSizes = () => {
         this.preparedThings = this.things.map(this.prepareThingSize);
     }
+
+    // private isAncestorActive = (preparedThing: PreparedThing) => {
+    //     let isActive = false;
+    //     const checkActivity = (preparedThing: PreparedThing): boolean => {
+    //         if (!preparedThing.parent) {
+    //             return true;
+    //         } else if (!this.activeElement) {
+    //             return false;
+    //         } else if (preparedThing.name === this.activeElement?.name) {
+    //             return true;
+    //         } else if (preparedThing?.parent?.name === this.activeElement?.name) {
+    //             return true;
+    //         } else if (preparedThing?.parent?.parent) {
+    //             const isActive = checkActivity(preparedThing.parent.parent);
+    //             return isActive;
+    //         }
+
+    //         return false;
+    //     }
+    //     isActive = checkActivity(preparedThing)
+    //     return isActive;
+    // };
 
     private prepareThingSize = (thing: Thing, i: number, things: Things, parentPreparedThing?: PreparedThing) => {
         const preparedThing: PreparedThing = {
@@ -534,6 +558,8 @@ export class GrowMap {
 
     drawThings = (preparedThings: PreparedThing[]) => {
         preparedThings.forEach((preparedThing) => {
+            // const x = this.isAncestorActive(preparedThing);
+            // console.log('x:', x);
             this.drawRectangle(preparedThing);
 
             if (preparedThing.children) {
