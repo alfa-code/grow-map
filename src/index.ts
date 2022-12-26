@@ -57,7 +57,9 @@ export class GrowMap {
         bgColor: string;
         fontSize: number;
         fontColor: string;
+        activeFontColor: string;
         rectColor: string;
+        activeRectColor: string;
         globPadding: number;
         zoom: number;
         center: {
@@ -83,10 +85,12 @@ export class GrowMap {
         this.params = {
             bgColor: 'skyblue',
             fontSize: 26,
-            fontColor: 'red',
+            fontColor: 'black',
+            activeFontColor: 'white',
             rectColor: 'white',
+            activeRectColor: '#ed4d72',
             zoom: 1,
-            globPadding: 20,
+            globPadding: 40,
             center: {
                 x: 0,
                 y: 0,
@@ -346,7 +350,6 @@ export class GrowMap {
 
                 this.params.center.x = this.params.center.x + xSlide;
                 this.params.center.y = this.params.center.y + ySlide;
-                console.log('this.params.center:', this.params.center);
 
                 this.params.drag.previousPosition = {
                     x: e.offsetX,
@@ -398,7 +401,6 @@ export class GrowMap {
 
             this.preparedThings.every((preparedThing) => {
                 const clickedThing = checkSelection(preparedThing, virtualOffsetX, virtualOffsetY);
-                console.log('clickedThing:', clickedThing);
                 if (clickedThing) {
                     this.activeElement = clickedThing;
                     return false;
@@ -443,27 +445,41 @@ export class GrowMap {
     }
 
     private drawRectangle = (thing: PreparedThing) => {
-        this.ctx.fillStyle = this.params.rectColor;
+        if (thing?.name === this.activeElement?.name) {
+            this.ctx.fillStyle = this.params.activeRectColor;
+        } else {
+            this.ctx.fillStyle = this.params.rectColor;
+        }
+
         this.ctx.fillRect(thing.position.x, thing.position.y, thing.size.width, thing.size.height);
+
+        let fontColor;
+        if (thing?.name === this.activeElement?.name) {
+            fontColor = this.params.activeFontColor;
+        } else {
+            fontColor = this.params.fontColor;
+        }
+
         this.drawText(
             thing.name,
             thing.position.x + thing.size.padding,
             thing.position.y + (thing.size.padding / 2) + thing.size.fontSize,
             thing.size.fontSize,
+            fontColor,
         );
     }
 
     private getTextSize = (text: string, fontSize: number): TextMetrics => {
         const previousFont = this.ctx.font;
-        this.ctx.font = `${fontSize}px serif`;
+        this.ctx.font = `${fontSize}px sans-serif`;
         const measuredText = this.ctx.measureText(text);
         this.ctx.font = previousFont;
         return measuredText;
     }
 
-    private drawText = (text: string, x: number, y: number, fontSize: number) => {
-        this.ctx.font = `${fontSize}px serif`;
-        this.ctx.fillStyle = this.params.fontColor;
+    private drawText = (text: string, x: number, y: number, fontSize: number, fontColor: string) => {
+        this.ctx.font = `${fontSize}px sans-serif`;
+        this.ctx.fillStyle = fontColor;
         this.ctx.fillText(text, x, y);
     }
 
