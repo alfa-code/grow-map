@@ -72,6 +72,12 @@ export class GrowMap {
                 x: number,
                 y: number,
             }
+        },
+        borders: {
+            left: number;
+            right: number;
+            top: number;
+            bottom: number;
         }
     };
     things: Things;
@@ -101,6 +107,12 @@ export class GrowMap {
                     x: 0,
                     y: 0
                 }
+            },
+            borders: {
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
             }
         }
         Object.defineProperty(this.params, 'globPadding', {
@@ -261,6 +273,34 @@ export class GrowMap {
      * ----------------------
      */
 
+    findBorders = (preparedThing: PreparedThing) => {
+        if (preparedThing.position.x <= this.params.borders.left) {
+            this.params.borders.left = preparedThing.position.x;
+        }
+
+        if (preparedThing.position.y <= this.params.borders.top) {
+            this.params.borders.top = preparedThing.position.y;
+        }
+
+        if ((preparedThing.position.x + preparedThing.size.width) >= this.params.borders.right) {
+            this.params.borders.right = (preparedThing.position.x + preparedThing.size.width);
+        }
+
+        if ((preparedThing.position.y + preparedThing.size.height) >= this.params.borders.bottom) {
+            this.params.borders.bottom = (preparedThing.position.y + preparedThing.size.height);
+        }
+
+        if (preparedThing.children) {
+            preparedThing.children.every(this.findBorders);
+        }
+
+        return true;
+    }
+
+    setBorders = () => {
+        this.preparedThings.every(this.findBorders);
+    }
+
     init = () => {
         this.canvas = document.createElement('canvas');
         this.canvas.id = 'growMapCanvas';
@@ -269,12 +309,19 @@ export class GrowMap {
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
 
-
-        this.ctx.translate(this.params.center.x, this.params.center.y);
+        this.prepareThingsSizes();
+        this.preparePositions();
+        this.setBorders();
 
         this.canvas.width = w;
         this.canvas.height = h;
         this.container.appendChild(this.canvas);
+
+        // Устанавливаем вью в цент всех элементов
+        this.params.center.x = (this.canvas.width / 2) - ((this.params.borders.right - this.params.borders.left) / 2);
+        this.params.center.y = (this.canvas.height / 2) - ((this.params.borders.bottom - this.params.borders.top) / 2);
+
+        this.ctx.translate(this.params.center.x, this.params.center.y);
 
         const observedContainerData: any = {
             previousWidth: null,
@@ -300,7 +347,6 @@ export class GrowMap {
         containerResizeObserver.observe(this.container);
 
         const interval = setInterval(() => {
-            // this.ctx.translate(this.params.center.x, this.params.center.y);
             this.drawBG();
             this.prepareThingsSizes();
             this.preparePositions();
