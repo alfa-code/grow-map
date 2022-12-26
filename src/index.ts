@@ -77,75 +77,6 @@ export class GrowMap {
         this.preparedThings = null;
     }
 
-    // private prepareThing = (thing: Thing, i: number, things: Things, preparedParent?: PreparedThing) => {
-    //     const preparedThing: PreparedThing = {
-    //         name: thing.name,
-    //         position: {
-    //             x: 0,
-    //             y: 0,
-    //         },
-    //         size: {
-    //             width: null,
-    //             height: null,
-    //             fontSize: null,
-    //             padding: null,
-    //         }
-    //     }
-
-    //     if (preparedParent) {
-    //         preparedThing.parent = preparedParent;
-    //     }
-
-    //     // Вычисляем ширину и высоту
-    //     const thingSize = this.getThingSize(thing);
-
-    //     preparedThing.size = {
-    //         width: thingSize.width,
-    //         height: thingSize.height,
-    //         fontSize: thingSize.fontSize,
-    //         padding: thingSize.padding,
-    //     }
-
-    //     if (i !== 0) {
-    //         const previousThingSize = this.getThingSize(things[i - 1]);
-    //         preparedThing.position.x = previousThingSize.width + this.params.globPadding;
-
-    //         if (preparedParent) {
-    //             preparedThing.position.x = (preparedParent.position.x + preparedParent.size.width) + previousThingSize.width + this.params.globPadding;
-    //         }
-    //     } else {
-    //         if (preparedParent) {
-    //             preparedThing.position.x = preparedParent.position.x;
-    //         }
-
-    //         // if (preparedParent) {
-    //         //     preparedThing.position.x = (preparedParent.position.x + preparedParent.size.width) + this.params.globPadding;
-    //         // }
-    //     }
-
-    //     if (preparedParent) {
-    //         preparedThing.position.y = preparedParent.position.y + preparedParent.size.height + this.params.globPadding;
-    //     } else {
-    //         preparedThing.position.y = 0
-    //     }
-
-    //     if (thing.children) {
-    //         preparedThing.children = thing.children.map((...props) => {
-    //             return this.prepareThing(...props, preparedThing);
-    //         });
-    //     }
-        
-    //     return preparedThing;
-    // }
-
-    // private prepareThings = () => {
-    //     const { things } = this;
-
-    //     this.preparedThings = things.map(this.prepareThing);
-
-    //     console.log('Things are prepared.');
-    // }
-
     /**
      * Подготавливаем положение элементов
      */
@@ -199,25 +130,22 @@ export class GrowMap {
             }
         }
 
-        // if (i !== 0) {
-        //     // Если элемент по ширине не первый - то нужно посчитать ширину их детей
-        //     if (preparedThings[i - 1].children) {
-        //         const childrenWidth = preparedThings[i - 1].children.reduce((pV, cV) => {
-        //             return pV + cV.size.width + this.params.globPadding;
-        //         }, 0)
-        //         console.log('childrenWidth:', childrenWidth);
-
-        //         // preparedThing.position.x = preparedThing.position.x + childrenWidth;
-        //     }
-        // }
         const getChildrenWidth = (children: PreparedThing[]) => {
             let commonWidth: number = 0;
             children.forEach((element, index) => {
+                // if (index === 0) {
+                //     commonWidth = commonWidth + this.params.globPadding + ((element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width);
+                // } else {
+                //     commonWidth = commonWidth + element.size.width + this.params.globPadding;
+                // }
+
                 if (index === 0) {
-                    commonWidth = commonWidth + this.params.globPadding;
-                } else {
-                    commonWidth = commonWidth + element.size.width + this.params.globPadding;
+                    // const biggestElem =  (element.parent.size.width >= element.size.width) ? element.parent.size.width : element.size.width;
+                    const smallestElem =  (element.parent.size.width <= element.size.width) ? element.parent.size.width : element.size.width;
+                    commonWidth = commonWidth - smallestElem;
                 }
+
+                commonWidth = commonWidth + element.size.width + this.params.globPadding;
 
                 if (element.children) {
                     const anotherChildrenWidth = getChildrenWidth(element.children);
@@ -231,20 +159,19 @@ export class GrowMap {
         }
 
         if (i !== 0) {
-            if (preparedThings[i - 1].children) {
-                // const allChildrenWidth = getChildrenWidth(preparedThings[i - 1].children);
-                let allChildrenWidth: number = 0;
-                const previousThings = preparedThings.slice(0, i);
-                previousThings.forEach((thing) => {
-                    if (thing.children) {
-                        allChildrenWidth = allChildrenWidth + getChildrenWidth(thing.children);
-                    }
-                    
-                });
+            // const allChildrenWidth = getChildrenWidth(preparedThings[i - 1].children);
+            let allChildrenWidth: number = 0;
+            const previousThings = preparedThings.slice(0, i);
+            previousThings.forEach((thing) => {
+                if (thing.children) {
+                    allChildrenWidth = allChildrenWidth + getChildrenWidth(thing.children);
+                }
+                
+            });
 
-                console.log('allChildrenWidth:', allChildrenWidth);
-                preparedThing.position.x = preparedThing.position.x + allChildrenWidth;
-            }
+            console.log('preparedThing.name', preparedThing.name);
+            console.log('allChildrenWidth:', allChildrenWidth);
+            preparedThing.position.x = preparedThing.position.x + allChildrenWidth;
         }
 
         if (preparedThing.children) {
@@ -318,7 +245,6 @@ export class GrowMap {
 
         this.prepareThingsSizes();
         this.preparePositions();
-        // this.prepareThings();
 
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
