@@ -99,7 +99,7 @@ export class GrowMap {
             rectColor: 'white',
             activeRectColor: '#ed4d72',
             zoom: 1,
-            globPadding: 40,
+            globPadding: 0,
             center: {
                 x: 0,
                 y: 0,
@@ -121,7 +121,7 @@ export class GrowMap {
         Object.defineProperty(this.params, 'globPadding', {
             // value: 42,
             // writable: true,
-            get() { return this.zoom * 20 },
+            get() { return this.zoom * 40 },
         });
         this.things = things;
         this.preparedThings = null;
@@ -387,6 +387,7 @@ export class GrowMap {
             this.drawBG();
             this.prepareThingsSizes();
             this.preparePositions();
+            this.drawRelations(this.preparedThings);
             this.drawThings(this.preparedThings);
 
             const elem = document.getElementById('growMapCanvas');
@@ -564,6 +565,41 @@ export class GrowMap {
         this.ctx.font = `${fontSize}px sans-serif`;
         this.ctx.fillStyle = fontColor;
         this.ctx.fillText(text, x, y);
+    }
+
+    private drawRelations = (preparedThings: PreparedThings) => {
+        preparedThings.forEach((preparedThingParent) => {
+            if (preparedThingParent.children) {
+                preparedThingParent.children.forEach((preparedThingChild) => {
+                    this.drawRelation(preparedThingParent, preparedThingChild);
+
+                    if (preparedThingChild.children) {
+                        this.drawRelations([preparedThingChild])
+                    }
+                });
+            }
+        });
+    }
+
+    private drawRelation = (parent: PreparedThing, child: PreparedThing) => {
+        const parentCenter = {
+            x: (parent.position.x + (parent.size.width / 2)),
+            y: (parent.position.y + (parent.size.height / 2)),
+        }
+
+        const childCenter = {
+            x: (child.position.x + (child.size.width / 2)),
+            y: (child.position.y + (child.size.height / 2)),
+        }
+
+        const { ctx } = this;
+
+        ctx.beginPath();
+        ctx.moveTo(parentCenter.x, parentCenter.y);
+        ctx.lineTo(childCenter.x, parentCenter.y);
+        ctx.stroke();
+        ctx.lineTo(childCenter.x, childCenter.y);
+        ctx.stroke();
     }
 
     private drawBG = () => {
