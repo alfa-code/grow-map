@@ -60,13 +60,26 @@ export class GrowMap {
         rectColor: string;
         globPadding: number;
         zoom: number;
+        center: {
+            x: number;
+            y: number;
+        },
+        drag: {
+            isDragging: boolean;
+            previousPosition: {
+                x: number,
+                y: number,
+            }
+        }
     };
     things: Things;
     preparedThings: Array<PreparedThing>;
+    activeElement: PreparedThing;
 
     constructor(container: Element, things: Things) {
         this.container = container;
         this.ctx = null;
+        this.activeElement = null;
         this.params = {
             bgColor: 'skyblue',
             fontSize: 26,
@@ -74,6 +87,17 @@ export class GrowMap {
             rectColor: 'white',
             zoom: 1,
             globPadding: 20,
+            center: {
+                x: 0,
+                y: 0,
+            },
+            drag: {
+                isDragging: false,
+                previousPosition: {
+                    x: 0,
+                    y: 0
+                }
+            }
         }
         Object.defineProperty(this.params, 'globPadding', {
             // value: 42,
@@ -241,15 +265,12 @@ export class GrowMap {
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
 
+
+        this.ctx.translate(this.params.center.x, this.params.center.y);
+
         this.canvas.width = w;
         this.canvas.height = h;
         this.container.appendChild(this.canvas);
-
-        // this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-
-        // setTimeout(() => {
-        //     this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-        // }, 3000);
 
         const observedContainerData: any = {
             previousWidth: null,
@@ -274,14 +295,8 @@ export class GrowMap {
         });
         containerResizeObserver.observe(this.container);
 
-        // window.requestAnimationFrame(() => {
-        //     this.drawBG();
-        //     this.prepareThingsSizes();
-        //     this.preparePositions();
-        //     this.drawThings(this.preparedThings);
-        // });
-
         const interval = setInterval(() => {
+            // this.ctx.translate(this.params.center.x, this.params.center.y);
             this.drawBG();
             this.prepareThingsSizes();
             this.preparePositions();
@@ -303,6 +318,96 @@ export class GrowMap {
                 this.params.zoom = 0.5;
             }
         })
+
+        this.canvas.addEventListener('mousedown', (e: any) => {
+            this.params.drag.isDragging = true;
+
+            this.params.drag.previousPosition = {
+                x: e.offsetX,
+                y: e.offsetY,
+            }
+        });
+
+        this.canvas.addEventListener('mouseup', (e: any) => {
+            this.params.drag.isDragging = false;
+
+            this.params.drag.previousPosition = {
+                x: e.offsetX,
+                y: e.offsetY,
+            }
+        });
+
+        this.canvas.addEventListener('mousemove', (e: any) => {
+            if (this.params.drag.isDragging) {
+                let xSlide = e.offsetX - this.params.drag.previousPosition.x;
+                let ySlide = e.offsetY - this.params.drag.previousPosition.y;
+
+                this.ctx.translate(xSlide, ySlide);
+
+                this.params.center.x = this.params.center.x + xSlide;
+                this.params.center.y = this.params.center.y + ySlide;
+                console.log('this.params.center:', this.params.center);
+
+                this.params.drag.previousPosition = {
+                    x: e.offsetX,
+                    y: e.offsetY,
+                }
+            }
+        });
+
+        const checkSelection = (preparedThing: PreparedThing, xPos: number, yPos: number) => {
+            const withinTheBordersX =
+                (xPos >= (preparedThing.position.x)) &&
+                xPos <= (preparedThing.position.x + preparedThing.size.width);
+
+            const withinTheBordersY =
+                (yPos >= preparedThing.position.y) &&
+                yPos <= (preparedThing.position.y + preparedThing.size.height);
+
+            if (withinTheBordersX) {
+                if (withinTheBordersY) {
+                    return preparedThing;
+                }
+            }
+
+            if (preparedThing.children) {
+                preparedThing.children.every((preparedThing) => {
+                    const clickedThing = checkSelection(preparedThing, xPos, yPos);
+                    if (clickedThing) {
+                        this.activeElement = clickedThing;
+                        return false;
+                    } else {
+                        this.activeElement = null;
+                    }
+                    return true;
+                });
+
+                if (this.activeElement) {
+                    return this.activeElement;
+                }
+            }
+
+            return null;
+        }
+
+        // Кликаем по канвасу - узнаем куда кликнули
+        // Перебираем все элементы - ищем границы куда кликнули
+        this.canvas.addEventListener('click', (e: any) => {
+            const virtualOffsetX = e.offsetX - (this.params.center.x);
+            const virtualOffsetY = e.offsetY - (this.params.center.y);
+
+            this.preparedThings.every((preparedThing) => {
+                const clickedThing = checkSelection(preparedThing, virtualOffsetX, virtualOffsetY);
+                console.log('clickedThing:', clickedThing);
+                if (clickedThing) {
+                    this.activeElement = clickedThing;
+                    return false;
+                } else {
+                    this.activeElement = null;
+                }
+                return true;
+            })
+        });
     }
 
     drawThings = (preparedThings: PreparedThing[]) => {
