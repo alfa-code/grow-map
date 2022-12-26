@@ -72,7 +72,7 @@ export class GrowMap {
             fontSize: 26,
             fontColor: 'red',
             rectColor: 'white',
-            zoom: 5,
+            zoom: 1,
             globPadding: 20,
         }
         Object.defineProperty(this.params, 'globPadding', {
@@ -89,7 +89,6 @@ export class GrowMap {
      */
     private preparePositions = () => {
         this.preparedThings = this.preparedThings.map(this.preparePosition);
-        console.log('Things sizes are prepared.');
     }
 
     private preparePosition = (preparedThing: PreparedThing, i: number, preparedThings: PreparedThings) => {
@@ -189,7 +188,6 @@ export class GrowMap {
      */
     private prepareThingsSizes = () => {
         this.preparedThings = this.things.map(this.prepareThingSize);
-        console.log('Things sizes are prepared.');
     }
 
     private prepareThingSize = (thing: Thing, i: number, things: Things, parentPreparedThing?: PreparedThing) => {
@@ -236,13 +234,9 @@ export class GrowMap {
      */
 
     init = () => {
-        console.log('App initialization is started.');
-
         this.canvas = document.createElement('canvas');
+        this.canvas.id = 'growMapCanvas';
         this.ctx = this.canvas.getContext('2d');
-
-        this.prepareThingsSizes();
-        this.preparePositions();
 
         const w = this.container.clientWidth;
         const h = this.container.clientHeight;
@@ -251,7 +245,11 @@ export class GrowMap {
         this.canvas.height = h;
         this.container.appendChild(this.canvas);
 
-        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        // this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+
+        // setTimeout(() => {
+        //     this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        // }, 3000);
 
         const observedContainerData: any = {
             previousWidth: null,
@@ -276,13 +274,35 @@ export class GrowMap {
         });
         containerResizeObserver.observe(this.container);
 
-        console.log('App is started.');
+        // window.requestAnimationFrame(() => {
+        //     this.drawBG();
+        //     this.prepareThingsSizes();
+        //     this.preparePositions();
+        //     this.drawThings(this.preparedThings);
+        // });
 
-        window.requestAnimationFrame(() => {
+        const interval = setInterval(() => {
             this.drawBG();
-
+            this.prepareThingsSizes();
+            this.preparePositions();
             this.drawThings(this.preparedThings);
-        });
+
+            const elem = document.getElementById('growMapCanvas');
+            if (!elem) {
+                clearInterval(interval);
+            }
+        }, 1000 / 30);
+
+        this.canvas.addEventListener('wheel', (event: any) => {
+            const deltaY = (event.deltaY / 1000);
+            this.params.zoom = this.params.zoom + deltaY;
+
+            if (this.params.zoom > 4) {
+                this.params.zoom = 4;
+            } else if (this.params.zoom < 0.5) {
+                this.params.zoom = 0.5;
+            }
+        })
     }
 
     drawThings = (preparedThings: PreparedThing[]) => {
@@ -296,7 +316,6 @@ export class GrowMap {
     }
 
     private reload = () => {
-        console.log('App reload is started.');
         this.container.innerHTML = '';
         this.init();
     }
@@ -345,6 +364,8 @@ export class GrowMap {
 
     private drawBG = () => {
         this.ctx.fillStyle = this.params.bgColor;
-        this.ctx.fillRect(-(this.canvas.width / 2), -(this.canvas.height / 2), this.canvas.width, this.canvas.height);
+        // this.ctx.fillRect(-(this.canvas.width / 2), -(this.canvas.height / 2), this.canvas.width, this.canvas.height);
+        // TODO: подумать можно ли использовать этот костыль
+        this.ctx.fillRect(-10000, -10000, 20000, 20000);
     }
 }
