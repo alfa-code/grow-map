@@ -407,12 +407,30 @@ export class GrowMap {
             }
         })
 
+        this.canvas.addEventListener('touchstart', (e: any) => {
+            this.params.drag.isDragging = true;
+
+            this.params.drag.previousPosition = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY,
+            }
+        });
+
         this.canvas.addEventListener('mousedown', (e: any) => {
             this.params.drag.isDragging = true;
 
             this.params.drag.previousPosition = {
                 x: e.offsetX,
                 y: e.offsetY,
+            }
+        });
+
+        this.canvas.addEventListener('touchend', (e: any) => {
+            this.params.drag.isDragging = false;
+
+            this.params.drag.previousPosition = {
+                x: e.changedTouches[0].clientX,
+                y: e.changedTouches[0].clientY,
             }
         });
 
@@ -438,6 +456,24 @@ export class GrowMap {
                 this.params.drag.previousPosition = {
                     x: e.offsetX,
                     y: e.offsetY,
+                }
+            }
+        });
+
+        // TODO: вынести общее
+        this.canvas.addEventListener('touchmove', (e: any) => {
+            if (this.params.drag.isDragging) {
+                let xSlide = e.changedTouches[0].clientX - this.params.drag.previousPosition.x;
+                let ySlide = e.changedTouches[0].clientY - this.params.drag.previousPosition.y;
+
+                this.ctx.translate(xSlide, ySlide);
+
+                this.params.center.x = this.params.center.x + xSlide;
+                this.params.center.y = this.params.center.y + ySlide;
+
+                this.params.drag.previousPosition = {
+                    x: e.changedTouches[0].clientX,
+                    y: e.changedTouches[0].clientY,
                 }
             }
         });
